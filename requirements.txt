@@ -1,3 +1,4 @@
 requests==2.13.0
 Django==1.11
 psycopg2==2.7.1
+bencode-python3==1.0.2
