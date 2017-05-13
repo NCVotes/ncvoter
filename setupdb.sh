@@ -7,6 +7,7 @@ else
 fi
 
 psql postgres -c "DROP DATABASE if exists ncvoter;"
+psql postgres -c "DROP DATABASE if exists test_ncvoter"
 psql postgres -c "DROP TABLESPACE if exists ncvoter;"
 
 if [ "$1" ]; then
@@ -20,4 +21,5 @@ psql postgres -c "DROP ROLE IF EXISTS ncvoter;
                     CREATE USER ncvoter WITH PASSWORD '';
                     ALTER ROLE ncvoter SET default_transaction_isolation TO 'read committed';
                     ALTER ROLE ncvoter SET timezone TO 'UTC';
+                    ALTER USER ncvoter CREATEDB;
                     GRANT ALL PRIVILEGES ON DATABASE ncvoter TO ncvoter;"
