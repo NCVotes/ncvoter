@@ -10,3 +10,9 @@
   become_user: root
   roles:
     - tequila-common
+
+- hosts: ncvoter
+  become: yes
+  become_user: root
+  roles:
+    - tequila-django

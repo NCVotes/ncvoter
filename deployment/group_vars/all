@@ -1,8 +1,8 @@
+project_name: ncvoter
 users:
   - name: csmith
     public_keys:
       - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDKcJhI4W1BUlzNUE2Q0cCD2EWPTm4VJX+ZLzCIaQd0AkMF8mQKgcsACmX7CInt7WMcYU2wwtmL8mywkvfYXTa2Jw3Uhmt5iB+kHVNjUF0kyPXzAFvFA55lzLOUvkFVHIE2Wrdi+6QUSYS9oH/bXR8IkQntWLJrOJBz0R4NhPLsHiNmNB8D81nRvhqUzf0nknroSZbftZfjOqQanijF9xaIkVvykPHB9fWh6UTesZi+U3+mrAJ0QZGeXAmAmo6iHESTbtmFcGNEC2TUe9sshQNLB+B1FDqGSmo9TN/znyl/BgyU5u3toQpoxI0UKkOUowJ5nA3Q6Brvz0qtY45rRsDhcJkyjP5RH5ARS+WlBzLd61rLG7XCja6WRDkm7RMR9QFC7iYTbm5oIh7qySLW4wbaV0L1cu7ZZeFWGYZ3Li6iZjiOqnk2kQblUnUaHgeZR2K891jUu/caHntIfyqf5uzUgXBKe/NVTWKcmrswSqPJelPVDix3+2r4JSS+fDARN6TzqwHbH0A8Zim8s/XuRPlkA0ejOoa1l4DQCLFvJuOAWNWysMduCK7HB8bvZ0Imq/hJiDiAazaXOFkSQfF/9KPNzmwYWMuF1XZtZA+Mh5giUKZ5smGriWbkzsQNUrw9wBWYBKkR50em1DzP2hrFFI0PxT0/FMDvYUkneKlD3YzVAQ== csmith@Navi"
-project_name: ncvoter
 root_dir: "/var/www/{{ project_name }}"
 log_dir: "{{ root_dir }}/log"
 public_dir: "{{ root_dir }}/public"
@@ -10,3 +10,7 @@ static_dir: "{{ root_dir }}/public/static"
 media_dir: "{{ root_dir }}/public/media"
 ssh_dir: "/home/{{ project_name }}/.ssh"
 ssl_dir: "{{ root_dir }}/ssl"
+python_version: "3.6.1"
+repo:
+  - url: "git@github.com:reesenewslab/ncvoter.git"
+  - branch: "master"
