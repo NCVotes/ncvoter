@@ -4,10 +4,9 @@
   pre_tasks:
     - name: install python2 if not present
       raw: sudo bash -c "test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)"
-    - setup:
 
 - hosts: all
   become: yes
   become_user: root
   roles:
-    - common
+    - tequila-common
