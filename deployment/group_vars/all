@@ -1,4 +1,5 @@
 project_name: ncvoter
+project_user: ncvoter
 users:
   - name: csmith
     public_keys:
@@ -10,7 +11,7 @@ static_dir: "{{ root_dir }}/public/static"
 media_dir: "{{ root_dir }}/public/media"
 ssh_dir: "/home/{{ project_name }}/.ssh"
 ssl_dir: "{{ root_dir }}/ssl"
-python_version: "3.6.1"
+python_version: "3.6"
 repo:
-  - url: "git@github.com:reesenewslab/ncvoter.git"
-  - branch: "master"
+    url: "git@github.com:reesenewslab/ncvoter.git"
+    branch: "master"

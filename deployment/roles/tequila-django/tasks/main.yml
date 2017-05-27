@@ -1,12 +1,23 @@
 ---
+- name: Check if python is already latest
+  command: python3 --version
+  register: python_version_result
+  failed_when: "{{ python_version_result.stdout | replace('Python ', '') | version_compare(python_version, '>=') }}"
+
+- name: Install prerequisites
+  apt: name=python-software-properties state=present
+  become: true
+
+- name: Add deadsnakes repo
+  apt_repository: repo="ppa:fkrull/deadsnakes"
+  become: true
+
 - name: install app packages
   apt: pkg={{ item }} state=present update_cache=yes cache_valid_time=3600
   with_items:
     - python-pip
     - libpq-dev
     - libev-dev
-    - libevent-dev
-    - libmemcached-dev
     - libjpeg8
     - libjpeg8-dev
     - libfreetype6
@@ -15,7 +26,6 @@
     - zlib1g-dev
     - libxml2-dev
     - libxslt1-dev
-    - ghostscript
     - libpython{{ python_version }}
     - libpython{{ python_version }}-dev
     - python{{ python_version }}
@@ -72,7 +82,7 @@
   when: supervisord_conf|changed
 
 - name: upload github key
-  copy: content={{ github_deploy_key }}
+  copy: content="{{ github_deploy_key }}"
         dest={{ ssh_dir }}/github
         owner={{ project_user }}
         group={{ project_user }}
@@ -86,10 +96,8 @@
        version={{ repo.branch|default('master') }}
        force=yes
        ssh_opts="-o StrictHostKeyChecking=no"
-       key_file={{ github_key.dest|default(None) }}
+       key_file="{{ github_key.dest|default(None) }}"
   become_user: "{{ project_user }}"
-  vars:
-    ansible_ssh_pipelining: true
   when: env_name != 'local' and not source_is_local
 
 # NB! The trailing '/' on the 'src' parameter is significant, do not remove!
@@ -117,8 +125,6 @@
 - name: delete pyc files
   shell: find {{ source_dir }} -name '*.pyc' -delete
   become_user: "{{ project_user }}"
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: clear out leftover build cruft from the project requirements
   file: path={{ venv_dir }}/build state=absent
@@ -129,8 +135,6 @@
        virtualenv_python=/usr/bin/python{{ python_version }}
        extra_args={{ requirements_extra_args|default("") }}
   become_user: "{{ project_user }}"
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: optionally install newrelic
   pip: name=newrelic
@@ -138,8 +142,6 @@
        virtualenv={{ venv_dir }}
        virtualenv_python=/usr/bin/python{{ python_version }}
   become_user: "{{ project_user }}"
-  vars:
-    ansible_ssh_pipelining: true
   when: use_newrelic
 
 - name: set up the project python path
@@ -171,14 +173,9 @@
     path={{ source_dir }}/manage.py
     mode=0755
   become_user: "{{ project_user }}"
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: django server is either a web server or a worker
   assert: { that: "is_web or is_worker" }
-
-- include: celery.yml
-  when: is_worker
 
 - include: web.yml
   when: is_web
