@@ -22,7 +22,8 @@ To setup the project for local development
    PostgreSQL storage, run `source setupdb.sh /Volumes/SEAGATE/ncvoter-db`.
    This script can be run at any later time, but any existing data will be
    deleted.
-7. To create the initially empty database tables, run `python manage.py migrate`
+7. To create the initially empty database tables, run `python manage.py
+   migrate` inside the ncvoter folder where manage.py is.
 
 ## Fetching and Processing Data
 
