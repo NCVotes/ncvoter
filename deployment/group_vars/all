@@ -19,3 +19,4 @@ pg_version: "9.6"
 app_minions: "{{ groups['ncvoter'] }}"
 use_memcached: false
 cert_source: "none"
+force_ssl: false

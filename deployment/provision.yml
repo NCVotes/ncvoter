@@ -25,7 +25,6 @@
       DOMAIN: "{{ domain }}"
       LOG_DIR: "{{ log_dir }}"
   roles:
-    - tequila-django
+    - tequila-nginx
     - tequila-postgresql
-
-
+    - tequila-django
