@@ -7,42 +7,29 @@
     virtualenv: "{{ venv_dir }}"
   become_user: "{{ project_user }}"
 
+- name: ensure gunicorn is present
+  supervisorctl: name={{ project_name }}-server state=present
+
 - name: configure gunicorn
   template: src=gunicorn.conf
             dest=/etc/supervisor/conf.d/{{ project_name }}-gunicorn.conf
             owner=root
             group=root
             mode=0600
+  tags:
+    - deploy
 
-- name: ensure gunicorn is present
-  supervisorctl: name={{ project_name }}-server state=present
 
-- name: Load environment variables for Django commands
-  command: "./dotenv.sh"
+- name: running Django migrations
+  command: "./manage.sh migrate"
+  become_user: "{{ project_user }}"
   args:
-    chdir: "{{ source_dir }}"
-  become_user: "{{ project_user }}"
-
-- name: copy shell script wrapper for manage.py
-  template: src=manage.sh
-            dest={{ root_dir }}/manage.sh
-            owner={{ project_name }}
-            group={{ project_name }}
-            mode=700
-
-- name: collectstatic
-  django_manage: >
-    command=collectstatic
-    app_path={{ source_dir }}/{{ project_name }}
-    virtualenv={{ venv_dir }}
-  become_user: "{{ project_user }}"
-
-- name: migrate
-  django_manage: >
-    command=migrate
-    app_path={{ source_dir }}/{{ project_name }}
-    virtualenv={{ venv_dir }}
-  become_user: "{{ project_user }}"
+    chdir: "{{ root_dir }}"
+  tags:
+    - deploy
+    - debug
 
 - name: restart gunicorn
   supervisorctl: name={{ project_name }}-server state=restarted
+  tags:
+    - deploy

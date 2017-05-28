@@ -5,8 +5,27 @@
     - name: install python2 if not present
       raw: sudo bash -c "test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)"
 
-- hosts: ncvoter
+- hosts: all
   become: yes
   become_user: root
   roles:
+    - tequila-common
+
+- hosts: ncvoter
+  become: yes
+  become_user: root
+  environment:
+      DJANGO_SETTINGS_MODULE: "{{ project_settings }}"
+      SECRET_KEY: "{{ secret_key }}"
+      DB_NAME: "{{ db_name }}"
+      DB_USER: "{{ db_user }}"
+      DB_HOST: "{{ db_host }}"
+      DB_PORT: "{{ db_port }}"
+      DB_PASSWORD: "{{ db_password }}"
+      DOMAIN: "{{ domain }}"
+      LOG_DIR: "{{ log_dir }}"
+  roles:
     - tequila-django
+    - tequila-postgresql
+
+

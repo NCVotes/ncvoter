@@ -89,6 +89,8 @@
         mode=600
   register: github_key
   when: github_deploy_key|default('')
+  tags:
+    - deploy
 
 - name: checkout latest project source
   git: repo={{ repo.url }}
@@ -99,6 +101,8 @@
        key_file="{{ github_key.dest|default(None) }}"
   become_user: "{{ project_user }}"
   when: env_name != 'local' and not source_is_local
+  tags:
+    - deploy
 
 # NB! The trailing '/' on the 'src' parameter is significant, do not remove!
 # (see the docs: http://docs.ansible.com/ansible/synchronize_module.html)
@@ -114,6 +118,8 @@
       - "--exclude=*.pyc"
   become: no  # stops synchronize trying to sudo locally
   when: source_is_local
+  tags:
+    - deploy
 
 - name: force proper ownership of source
   file:
@@ -121,13 +127,19 @@
     group: "{{ project_user }}"
     path: "{{ source_dir }}"
     recurse: yes
+  tags:
+    - deploy
 
 - name: delete pyc files
   shell: find {{ source_dir }} -name '*.pyc' -delete
   become_user: "{{ project_user }}"
+  tags:
+    - deploy
 
 - name: clear out leftover build cruft from the project requirements
   file: path={{ venv_dir }}/build state=absent
+  tags:
+    - deploy
 
 - name: Build virtualenv
   command: virtualenv {{ venv_dir }} -p python{{ python_version }}
@@ -138,6 +150,8 @@
        virtualenv={{ venv_dir }}
        extra_args={{ requirements_extra_args|default("") }}
   become_user: "{{ project_user }}"
+  tags:
+    - deploy
 
 - name: set up the project python path
   copy: content="{{ source_dir }}"
@@ -155,6 +169,8 @@
     group={{ project_user }}
     mode=400
     src=envfile.j2
+  tags:
+    - deploy
 
 - name: add the dotenv.sh helper script
   copy: src=dotenv.sh
@@ -162,6 +178,13 @@
         owner={{ project_user }}
         group={{ project_user }}
         mode=700
+
+- name: copy shell script wrapper for manage.py
+  template: src=manage.sh
+            dest={{ root_dir }}/manage.sh
+            owner={{ project_name }}
+            group={{ project_name }}
+            mode=700
 
 - name: make manage.py executable (because django_manage expects it)
   file: >
