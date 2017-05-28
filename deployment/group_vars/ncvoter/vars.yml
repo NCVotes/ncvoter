@@ -4,4 +4,4 @@ is_web: true
 is_worker: false
 requirements_file: "{{ source_dir }}/requirements.txt"
 gunicorn_num_workers: 2
-project_settings: "{{ project_name }}.settings.prod"
+project_settings: "{{ project_name }}.prod_settings"

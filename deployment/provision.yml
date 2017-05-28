@@ -5,15 +5,8 @@
     - name: install python2 if not present
       raw: sudo bash -c "test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)"
 
-- hosts: all
-  become: yes
-  become_user: root
-  roles:
-  - tequila-common
-
 - hosts: ncvoter
   become: yes
   become_user: root
   roles:
     - tequila-django
-    - tequila-postgresql
