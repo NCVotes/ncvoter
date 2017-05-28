@@ -9,7 +9,6 @@
     state: present
     version: "{{ gunicorn_version|default(omit) }}"
     virtualenv: "{{ venv_dir }}"
-    virtualenv_python: /usr/bin/python{{ python_version }}
   become_user: "{{ project_user }}"
 
 - name: configure gunicorn
@@ -22,19 +21,17 @@
 - name: ensure gunicorn is present
   supervisorctl: name={{ project_name }}-server state=present
 
-# TODO: let connections to 8000 through the firewall if we are load-balancing.
-
-- name: collectstatic
-  django_manage: >
-    command=collectstatic
-    app_path={{ source_dir }}
-    virtualenv={{ venv_dir }}
-  become_user: "{{ project_user }}"
+#- name: collectstatic
+#django_manage: >
+#command=collectstatic
+#app_path={{ source_dir }}/{{ project_name }}
+#virtualenv={{ venv_dir }}
+#become_user: "{{ project_user }}"
 
 - name: migrate
   django_manage: >
     command=migrate
-    app_path={{ source_dir }}
+    app_path={{ source_dir }}/{{ project_name }}
     virtualenv={{ venv_dir }}
   become_user: "{{ project_user }}"
 

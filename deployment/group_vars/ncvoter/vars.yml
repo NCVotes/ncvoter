@@ -3,5 +3,5 @@ domain: ec2-52-87-224-45.compute-1.amazonaws.com
 is_web: true
 is_worker: false
 requirements_file: "{{ source_dir }}/requirements.txt"
-gunicorn_num_threads: 2
+gunicorn_num_workers: 2
 project_settings: "{{ project_name }}.settings.prod"

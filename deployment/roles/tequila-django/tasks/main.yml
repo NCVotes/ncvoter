@@ -129,20 +129,15 @@
 - name: clear out leftover build cruft from the project requirements
   file: path={{ venv_dir }}/build state=absent
 
+- name: Build virtualenv
+  command: virtualenv {{ venv_dir }} -p python{{ python_version }}
+  become_user: "{{ project_user }}"
+
 - name: pip install the project requirements
   pip: requirements={{ requirements_file }}
        virtualenv={{ venv_dir }}
-       virtualenv_python=/usr/bin/python{{ python_version }}
        extra_args={{ requirements_extra_args|default("") }}
   become_user: "{{ project_user }}"
-
-- name: optionally install newrelic
-  pip: name=newrelic
-       state=latest
-       virtualenv={{ venv_dir }}
-       virtualenv_python=/usr/bin/python{{ python_version }}
-  become_user: "{{ project_user }}"
-  when: use_newrelic
 
 - name: set up the project python path
   copy: content="{{ source_dir }}"
@@ -170,7 +165,7 @@
 
 - name: make manage.py executable (because django_manage expects it)
   file: >
-    path={{ source_dir }}/manage.py
+    path={{ source_dir }}/{{ project_name }}/manage.py
     mode=0755
   become_user: "{{ project_user }}"
 
