@@ -19,6 +19,13 @@
   tags:
     - deploy
 
+- name: running Django collectstatic
+  command: "./manage.sh collectstatic"
+  become_user: "{{ project_user }}"
+  args:
+    chdir: "{{ root_dir }}"
+  tags:
+    - deploy
 
 - name: running Django migrations
   command: "./manage.sh migrate"
