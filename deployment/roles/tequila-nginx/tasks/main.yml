@@ -1,0 +1,102 @@
+---
+- name: Nginx PPA
+  apt_repository: repo="ppa:nginx/stable" state=present
+
+- name: install nginx
+  apt: name=nginx
+       state=latest
+
+- name: start nginx
+  service: name=nginx
+           state=started
+
+- name: remove_existing_conf
+  file: path=/etc/nginx/sites-enabled/default
+        state=absent
+  notify:
+    - reload nginx
+
+- name: edit nginx.conf
+  lineinfile: dest=/etc/nginx/nginx.conf
+              regexp=" server_names_hash_bucket_size 64;"
+              insertafter="^# server_names_hash_bucket_size 64;"
+              line="        server_names_hash_bucket_size 64;"
+  notify:
+    - reload nginx
+
+- name: allow port 80 through firewall
+  ufw: rule=allow port=http
+
+- name: allow port 443 through firewall
+  ufw: rule=allow port=https
+
+- name: create ssl directory
+  file: path={{ ssl_dir }}
+        state=directory
+        owner=root
+        group=www-data
+        mode=644
+
+- name: create dhparams_file (slow)
+  command: openssl dhparam -out {{ dhparams_file }} {{ dhparam_numbits|default(2048) }}
+  args:
+    creates: "{{ dhparams_file }}"
+  when: env_name != 'local'
+
+- name: optionally generate self-signed cert
+  command: "{{ item }}"
+  args:
+    chdir: "{{ ssl_dir }}"
+    creates: "{{ domain }}.crt"
+  when: cert_source == "selfsign"
+  with_items:
+    - openssl genrsa -out {{ domain }}.key 2048
+    - cp {{ domain }}.key {{ domain }}.key.secure
+    - openssl rsa -in {{ domain }}.key.secure -out {{ domain }}.key
+    - openssl req -new -key {{ domain }}.key -subj "/C=US/ST=North Carolina/L=Durham/O=Caktus/OU=IT/CN={{ domain }}" -out {{ domain }}.csr
+    - openssl x509 -req -days 365 -in {{ domain }}.csr -signkey {{ domain }}.key -out {{ domain }}.crt
+  notify:
+    - reload nginx
+
+- name: optionally upload pre-generated cert
+  copy: content={{ item.content }}
+        dest={{ ssl_dir }}/{{ item.dest }}
+        owner=root
+        mode=600
+  when: cert_source == "provided"
+  with_items:
+    - {'content': "{{ ssl_cert }}", 'dest': "{{ domain }}.crt"}
+    - {'content': "{{ ssl_key }}", 'dest': "{{ domain }}.key"}
+  notify:
+    - reload nginx
+
+- include: http_auth.yml
+  when: http_auth
+
+- name: remove htpasswd file
+  file: path={{ auth_file }} state=absent
+  when: not http_auth
+
+- name: configure nginx server for our project
+  template: >
+    dest=/etc/nginx/sites-enabled/{{ project_name }}.conf
+    owner=root
+    mode=644
+    src={{ nginx_conf_template|default('nginx.conf.j2') }}
+  notify: reload nginx
+
+- include: letsencrypt.yml
+  when: cert_source == "letsencrypt"
+
+- name: install memcached
+  apt: name=memcached state=present
+  when: use_memcached
+
+- name: ensure memcached is running
+  service: name=memcached state=started
+  when: use_memcached
+
+- name: allow the app minions through the firewall for memcached
+  ufw: rule=allow port=11211 from_ip={{ hostvars[item].ansible_default_ipv4.address }}
+  with_items: "{{ app_minions }}"
+  when: use_memcached
