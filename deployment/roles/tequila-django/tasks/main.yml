@@ -141,8 +141,12 @@
   tags:
     - deploy
 
+- stat: path="{{ venv_dir }}"
+  register: virtualenv_folder
+
 - name: Build virtualenv
   command: virtualenv {{ venv_dir }} -p python{{ python_version }}
+  when: not virtualenv_folder.stat.exists
   become_user: "{{ project_user }}"
 
 - name: pip install the project requirements
