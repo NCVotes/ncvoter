@@ -15,3 +15,5 @@ python_version: "3.6"
 repo:
     url: "git@github.com:reesenewslab/ncvoter.git"
     branch: "master"
+pg_version: "9.6"
+app_minions: "{{ groups['ncvoter'] }}"
