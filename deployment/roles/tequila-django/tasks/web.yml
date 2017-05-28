@@ -27,7 +27,6 @@
     chdir: "{{ root_dir }}"
   tags:
     - deploy
-    - debug
 
 - name: restart gunicorn
   supervisorctl: name={{ project_name }}-server state=restarted

@@ -168,7 +168,7 @@
 # source directory locally.
 - name: create/update .env file
   template: >
-    dest={{ source_dir }}/.env
+    dest={{ source_dir }}/{{ project_name }}/.env
     owner={{ project_user }}
     group={{ project_user }}
     mode=400
@@ -178,7 +178,7 @@
 
 - name: add the dotenv.sh helper script
   copy: src=dotenv.sh
-        dest={{ source_dir }}/dotenv.sh
+        dest={{ source_dir }}/{{ project_name }}/dotenv.sh
         owner={{ project_user }}
         group={{ project_user }}
         mode=700
