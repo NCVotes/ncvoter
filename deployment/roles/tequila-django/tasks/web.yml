@@ -20,7 +20,7 @@
     - deploy
 
 - name: running Django collectstatic
-  command: "./manage.sh collectstatic"
+  command: "./manage.sh collectstatic --noinput"
   become_user: "{{ project_user }}"
   args:
     chdir: "{{ root_dir }}"
