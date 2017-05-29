@@ -30,6 +30,26 @@
                    encrypted=yes
   become_user: postgres
 
+- name: create the reader postgres user
+  postgresql_user: name=reader
+                   role_attr_flags=NOCREATEDB,NOCREATEROLE,NOSUPERUSER
+                   password="{{ reader_db_password }}"
+                   encrypted=yes
+  become_user: postgres
+  tags:
+    - debug
+
+- name: Create Postgresql user reader
+  postgresql_privs: >
+    database="{{ db_name }}"
+    state=absent
+    privs=INSERT,UPDATE
+    objs=ALL_IN_SCHEMA
+    role=reader
+  become_user: postgres
+  tags:
+    - debug
+
 - name: create the project database
   postgresql_db: name="{{ db_name }}"
                  owner="{{ db_user }}"
