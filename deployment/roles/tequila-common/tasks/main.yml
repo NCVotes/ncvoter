@@ -18,6 +18,8 @@
     - rsync
     - apt-transport-https
     - lsof
+    - tmux
+    - htop
 
 - include: newrelic.yml
   when: use_newrelic
