@@ -1,5 +1,5 @@
 env_name: prod
-domain: http://ec2-52-87-205-5.compute-1.amazonaws.com/
+domain: ec2-52-87-205-5.compute-1.amazonaws.com
 is_web: true
 is_worker: false
 requirements_file: "{{ source_dir }}/requirements.txt"
