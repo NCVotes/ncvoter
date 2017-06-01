@@ -36,8 +36,6 @@
                    password="{{ reader_db_password }}"
                    encrypted=yes
   become_user: postgres
-  tags:
-    - debug
 
 - name: Create Postgresql user reader
   postgresql_privs: >
@@ -47,8 +45,17 @@
     objs=ALL_IN_SCHEMA
     role=reader
   become_user: postgres
-  tags:
-    - debug
+
+- name: Make PostgreSQL reader role able to SELECT
+  postgresql_privs:
+    database="{{ db_name }}"
+    state=present
+    privs=SELECT
+    type=table
+    objs=ALL_IN_SCHEMA
+    roles=reader
+    grant_option=yes
+  become_user: postgres
 
 - name: create the project database
   postgresql_db: name="{{ db_name }}"
