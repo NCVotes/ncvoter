@@ -7,9 +7,6 @@
     virtualenv: "{{ venv_dir }}"
   become_user: "{{ project_user }}"
 
-- name: ensure gunicorn is present
-  supervisorctl: name={{ project_name }}-server state=present
-
 - name: configure gunicorn
   template: src=gunicorn.conf
             dest=/etc/supervisor/conf.d/{{ project_name }}-gunicorn.conf
@@ -18,6 +15,9 @@
             mode=0600
   tags:
     - deploy
+
+- name: ensure gunicorn is present
+  supervisorctl: name={{ project_name }}-server state=present
 
 - name: running Django collectstatic
   command: "./manage.sh collectstatic --noinput"
