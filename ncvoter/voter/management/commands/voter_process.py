@@ -5,6 +5,7 @@ from django.forms.models import model_to_dict
 import csv
 import codecs
 import hashlib
+import os
 
 from bencode import bencode
 
@@ -12,6 +13,7 @@ from voter.models import FileTracker, ChangeTracker, NCVHis, NCVoter
 
 
 BULK_CREATE_AMOUNT = 3000
+
 
 def merge_dicts(x, y):
     """Given two dicts `x` and `y`, merge them into a new dict as a shallow
@@ -124,76 +126,79 @@ def process_changes(output, file_tracker):
     if output:
         print("Processing updates for file {0}".format(file_tracker.filename))
     unwritten_ncvoters = []
-    unwritten_ncvhiss = []
     for index, change_tracker in enumerate(file_tracker.changes.iterator()):
-        if output and index % BULK_CREATE_AMOUNT == 0:
-            print(".", end='', flush=True)
-        ModelClass = None
-        if change_tracker.model_name == FileTracker.DATA_FILE_KIND_NCVOTER:
-            ModelClass = NCVoter
-        if change_tracker.model_name == FileTracker.DATA_FILE_KIND_NCVHIS:
-            ModelClass = NCVHis
-        if ModelClass is None:
-            print("invalid model_name value {0} in "
-                  "ChangeTracker row with id {1}".format(
-                      change_tracker.model_name, change_tracker.id))
-            break
         data = change_tracker.data
         if change_tracker.op_code == ChangeTracker.OP_CODE_ADD:
-            nc_voter = None
-            if ModelClass == NCVHis:
-                try:
-                    nc_voter = NCVoter.objects.get(ncid=data['ncid'])
-                except NCVoter.DoesNotExist:
-                    nc_voter = None
-            if nc_voter is not None:
-                # TODO: Investigate if this works against real data
-                data['voter'] = nc_voter
-            if ModelClass == NCVoter:
-                unwritten_ncvoters.append(NCVoter(**data))
-            else:
-                unwritten_ncvhiss.append(NCVHis(**data))
+            unwritten_ncvoters.append(NCVoter(**data))
         if change_tracker.op_code == ChangeTracker.OP_CODE_MODIFY:
-            if ModelClass == NCVHis:
-                query_data = {
-                    'ncid': change_tracker.ncid,
-                    'election_desc': change_tracker.election_desc
-                }
-            else:
-                query_data = {
-                    'ncid': change_tracker.ncid,
-                }
-            ModelClass.objects.filter(**query_data) \
+            NCVoter.objects.filter(ncid=change_tracker.ncid) \
                 .update(**data)
         if len(unwritten_ncvoters) >= BULK_CREATE_AMOUNT:
+            if output:
+                print(".", end='', flush=True)
             NCVoter.objects.bulk_create(unwritten_ncvoters)
             unwritten_ncvoters = []
-        if len(unwritten_ncvhiss) >= BULK_CREATE_AMOUNT:
-            NCVHis.objects.bulk_create(unwritten_ncvhiss)
-            unwritten_ncvhiss = []
     if len(unwritten_ncvoters) >= 0:
         NCVoter.objects.bulk_create(unwritten_ncvoters)
         unwritten_ncvoters = []
-    if len(unwritten_ncvhiss) >= 0:
-        NCVHis.objects.bulk_create(unwritten_ncvhiss)
-        unwritten_ncvhiss = []
     file_tracker.updates_processed = True
     file_tracker.save()
 
 
-def process_file(output, create_changes_only, data_file_label, data_file_kind, county_num=None):
+@transaction.atomic
+def load_ncvhis(output, file_tracker):
+    if output:
+        print("Processing NCVHis data from file {0}".format(file_tracker.filename))
+    added_tally = 0
+    ignored_tally = 0
+    unwritten_rows = []
+    for index, row in enumerate(get_file_lines(file_tracker.filename)):
+        ncid = row['ncid']
+        election_desc = row['election_desc']
+        existing_ncvhis = NCVHis.objects.filter(ncid=ncid, election_desc=election_desc).exists()
+        if not existing_ncvhis:
+            added_tally += 1
+            parsed_row = NCVHis.parse_row(row)
+            try:
+                corresponding_ncvoter = NCVoter.objects.get(ncid=ncid)
+            except NCVoter.DoesNotExist:
+                corresponding_ncvoter = None
+            parsed_row['voter'] = corresponding_ncvoter
+            unwritten_rows.append(NCVHis(**parsed_row))
+        else:
+            ignored_tally += 1
+            continue
+        if len(unwritten_rows) >= BULK_CREATE_AMOUNT:
+            if output:
+                print(".", end='', flush=True)
+            NCVHis.objects.bulk_create(unwritten_rows)
+            unwritten_rows = []
+    if len(unwritten_rows) > 0:
+        NCVHis.objects.bulk_create(unwritten_rows)
+        unwritten_rows = []
+    file_tracker.change_tracker_processed = True
+    file_tracker.updates_processed = True
+    file_tracker.save()
+    if output:
+        print("NCVHis loading completed:")
+        print("Added records: {0}".format(added_tally))
+        print("Ignored records: {0}".format(ignored_tally))
+    return (added_tally, 0, ignored_tally)
+
+
+def process_files(output, county_num=None):
     results = []
     if output:
-        print("Processing {0} file...".format(data_file_label))
+        print("Processing NCVoter file...")
     file_tracker_filter_data = {
         'change_tracker_processed': False,
-        'data_file_kind': data_file_kind
+        'data_file_kind': FileTracker.DATA_FILE_KIND_NCVOTER
     }
     if county_num:
         file_tracker_filter_data['county_num'] = county_num
-    file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
+    ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
         .order_by('created')
-    for file_tracker in file_trackers:
+    for file_tracker in ncvoter_file_trackers:
         added, modified, ignored = create_changes(output, file_tracker)
         results.append(
             {'filename': file_tracker.filename,
@@ -208,26 +213,37 @@ def process_file(output, create_changes_only, data_file_label, data_file_kind, c
             print("Ignored records: {0}".format(ignored))
         file_tracker.change_tracker_processed = True
         file_tracker.save()
-    if not create_changes_only:
-        file_tracker_filter_data['change_tracker_processed'] = True
-        file_tracker_filter_data['updates_processed'] = False
-        unprocessed_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
-            .order_by('created')
-        for file_tracker in unprocessed_file_trackers:
-            process_changes(output, file_tracker)
-    return results
+    file_tracker_filter_data['change_tracker_processed'] = True
+    file_tracker_filter_data['updates_processed'] = False
+    unprocessed_ncvoter_file_trackers = FileTracker.objects.filter(**file_tracker_filter_data) \
+        .order_by('created')
+    for file_tracker in unprocessed_ncvoter_file_trackers:
+        process_changes(output, file_tracker)
+    ncvhis_filter_data = {
+        'change_tracker_processed': False,
+        'updates_processed': False,
+        'data_file_kind': FileTracker.DATA_FILE_KIND_NCVHIS,
+    }
+    if county_num:
+        ncvhis_filter_data['county_num'] = county_num
+    unloaded_ncvhis_file_trackers = FileTracker.objects.filter(**ncvhis_filter_data) \
+        .order_by('created')
+    ncvhis_results = []
+    for file_tracker in unloaded_ncvhis_file_trackers:
+        ncvhis_results.append(load_ncvhis(output, file_tracker))
+    return results, ncvhis_results
 
 
-def process_files(output=False, create_changes_only=False, county_num=None):
-    file_label_kind_listing = [("NCVoter", FileTracker.DATA_FILE_KIND_NCVOTER),
-                               ("NCVHis", FileTracker.DATA_FILE_KIND_NCVHIS)]
-    change_results = [
-        process_file(output, create_changes_only,
-                     data_file_label, data_file_kind, county_num)
-        for data_file_label, data_file_kind in file_label_kind_listing
-        ]
-    # TODO: Add FK's from NCVoter to NCVHis once both are processed
-    return change_results
+def remove_processed_files(output=True):
+    if output:
+        print("Deleting processed files")
+    processed_file_trackers = FileTracker.objects.filter(updates_processed=True) \
+        .order_by('created')
+    for file_tracker in processed_file_trackers:
+        try:
+            os.remove(file_tracker.filename)
+        except FileNotFoundError:
+            pass
 
 
 class Command(BaseCommand):
@@ -242,4 +258,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         county_num = options.get('county')
-        process_files(output=True, create_changes_only=False, county_num=county_num)
+        process_files(output=True, county_num=county_num)
+        remove_processed_files(output=True)
