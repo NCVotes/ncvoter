@@ -1,0 +1,7 @@
+env_name: prod
+domain: ec2-107-22-50-166.compute-1.amazonaws.com
+is_web: false
+is_worker: false
+requirements_file: "{{ source_dir }}/requirements.txt"
+gunicorn_num_workers: 2
+project_settings: "{{ project_name }}.prod_settings"
