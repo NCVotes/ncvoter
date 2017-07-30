@@ -196,6 +196,14 @@
     mode=0755
   become_user: "{{ project_user }}"
 
+- name: Regularly update voter data via cron
+  cron:
+    cron_file="voter-process"
+    hour="2"
+    minute="0"
+    user="{{ project_user }}"
+    job="cd {{ root_dir }}; ./manage.sh voter_fetch --bycounty; seq 1 100 | parallel -P 8 './manage.sh voter_process -c {} > {}.out'"
+
 - name: django server is either a web server or a worker
   assert: { that: "is_web or is_worker" }
 
