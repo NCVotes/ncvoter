@@ -4,6 +4,9 @@ users:
   - name: csmith
     public_keys:
       - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDKcJhI4W1BUlzNUE2Q0cCD2EWPTm4VJX+ZLzCIaQd0AkMF8mQKgcsACmX7CInt7WMcYU2wwtmL8mywkvfYXTa2Jw3Uhmt5iB+kHVNjUF0kyPXzAFvFA55lzLOUvkFVHIE2Wrdi+6QUSYS9oH/bXR8IkQntWLJrOJBz0R4NhPLsHiNmNB8D81nRvhqUzf0nknroSZbftZfjOqQanijF9xaIkVvykPHB9fWh6UTesZi+U3+mrAJ0QZGeXAmAmo6iHESTbtmFcGNEC2TUe9sshQNLB+B1FDqGSmo9TN/znyl/BgyU5u3toQpoxI0UKkOUowJ5nA3Q6Brvz0qtY45rRsDhcJkyjP5RH5ARS+WlBzLd61rLG7XCja6WRDkm7RMR9QFC7iYTbm5oIh7qySLW4wbaV0L1cu7ZZeFWGYZ3Li6iZjiOqnk2kQblUnUaHgeZR2K891jUu/caHntIfyqf5uzUgXBKe/NVTWKcmrswSqPJelPVDix3+2r4JSS+fDARN6TzqwHbH0A8Zim8s/XuRPlkA0ejOoa1l4DQCLFvJuOAWNWysMduCK7HB8bvZ0Imq/hJiDiAazaXOFkSQfF/9KPNzmwYWMuF1XZtZA+Mh5giUKZ5smGriWbkzsQNUrw9wBWYBKkR50em1DzP2hrFFI0PxT0/FMDvYUkneKlD3YzVAQ== csmith@Navi"
+  - name: bill10
+    public_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCnd98D0+Nyjra1XDJJR9u5dC1tr29fdqWJ9hSm7CL4RtUJ1OLNyUVpeLlpc1Xsi71UHm2vadwPSgrAc/UlmQ1qUFmXpYYllKtxusSyqSs5lKpE+Ju95xSFm+PslJH99kIytadJlS41nwH+oqffGuueiivHIBK5mAhRAFLv9VJusu3U4jkEfm/8fgJxyVGu3SEwag3G+0BTiIMRg4e5AHfib7y88y+/L3B878X6AmVcHfQPaw99jKuzkCKro8nrEz9IMUYDWn+w0ULX2SlfZ2r+rBjHlclKbYp6r6DSsIl2FUexIFOTdkLkrZePrxVvHp31U6+j1Vsid94RfSM2ksk7 Bill@Bill-Desktop"
 root_dir: "/var/www/{{ project_name }}"
 log_dir: "{{ root_dir }}/log"
 public_dir: "{{ root_dir }}/public"
